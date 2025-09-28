@@ -53,11 +53,11 @@ export class SupabaseClient {
     return this.supabase.auth.onAuthStateChange(callback)
   }
 
-  async from(table) {
+  from(table) {
     return this.supabase.from(table)
   }
 
-  async storage() {
+  storage() {
     return this.supabase.storage
   }
 

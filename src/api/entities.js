@@ -83,6 +83,25 @@ class SupabaseEntity {
     if (error) throw error;
     return { success: true };
   }
+
+  // Method for updating current user's data
+  async updateMyUserData(data) {
+    // Get current user
+    const { session } = await SupabaseAuth.getCurrentSession();
+    if (!session?.user) {
+      throw new Error('No authenticated user found');
+    }
+
+    // Update user profile in profiles table
+    const { data: result, error } = await SupabaseDB.from(this.tableName)
+      .update(data)
+      .eq('id', session.user.id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return result;
+  }
 }
 
 // Create entity instances
