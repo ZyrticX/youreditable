@@ -108,27 +108,27 @@
         }
       };
 
-      // Listen for Paddle events
-      Paddle.Checkout.on('checkout.completed', (data) => {
-        console.log('✅ Payment completed:', data);
-        
-        // Show success message
-        alert('🎉 Payment successful!\n\nYour subscription is being activated. You may need to refresh the page to see changes.');
-        
-        // Optionally reload the page after a delay
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
-      });
+          // Listen for Paddle events (updated API)
+          if (Paddle.Checkout && Paddle.Checkout.on) {
+            Paddle.Checkout.on('checkout.completed', (data) => {
+              console.log('✅ Payment completed:', data);
+              alert('🎉 Payment successful!\n\nYour subscription is being activated. You may need to refresh the page to see changes.');
+              setTimeout(() => {
+                window.location.reload();
+              }, 2000);
+            });
 
-      Paddle.Checkout.on('checkout.closed', (data) => {
-        console.log('❌ Checkout closed:', data);
-      });
+            Paddle.Checkout.on('checkout.closed', (data) => {
+              console.log('❌ Checkout closed:', data);
+            });
 
-      Paddle.Checkout.on('checkout.error', (error) => {
-        console.error('❌ Checkout error:', error);
-        alert('Payment error occurred. Please try again.');
-      });
+            Paddle.Checkout.on('checkout.error', (error) => {
+              console.error('❌ Checkout error:', error);
+              alert('Payment error occurred. Please try again.');
+            });
+          } else {
+            console.log('🔄 Paddle Checkout events not available in this version');
+          }
 
       console.log('🎯 Paddle payment system loaded');
       console.log('💡 Environment:', PADDLE_CONFIG.environment);
