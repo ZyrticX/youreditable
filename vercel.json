@@ -1,5 +1,4 @@
 {
-  "name": "youreditable-app",
   "version": 2,
   "build": {
     "env": {
@@ -41,10 +40,5 @@
         }
       ]
     }
-  ],
-  "functions": {
-    "app/api/**/*.js": {
-      "runtime": "@vercel/node"
-    }
-  }
+  ]
 }
