@@ -109,7 +109,7 @@ export default function ProjectHeader({ project, onProjectUpdate, onApproveProje
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  <span>Created {format(new Date(project.created_date), "MMM d, yyyy")}</span>
+                  <span>Created {format(new Date(project.created_at), "MMM d, yyyy")}</span>
                 </div>
               </div>
             </div>

@@ -90,7 +90,7 @@ export default function ProjectsPage() {
     setError(null);
     
     try {
-      const userProjects = await retryApiCall(() => Project.filter({ user_id: user.id }, "-created_date"));
+      const userProjects = await retryApiCall(() => Project.filter({ user_id: user.id }, "-created_at"));
       setProjects(userProjects);
     } catch (error) {
       console.error("Error loading projects:", error);

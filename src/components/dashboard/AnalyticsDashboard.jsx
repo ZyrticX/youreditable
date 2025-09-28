@@ -78,7 +78,7 @@ export default function AnalyticsDashboard({ data, projects, isLoading }) {
 
     const totalDays = approvedProjects.reduce((sum, project) => {
       const approvalDate = new Date(project.last_status_change_at);
-      const creationDate = new Date(project.created_date);
+      const creationDate = new Date(project.created_at);
       return sum + differenceInDays(approvalDate, creationDate);
     }, 0);
 
@@ -87,14 +87,14 @@ export default function AnalyticsDashboard({ data, projects, isLoading }) {
 
   const getRecentActivity = () => {
     const last7Days = subDays(new Date(), 7);
-    return projects.filter((p) => new Date(p.created_date) > last7Days).length;
+    return projects.filter((p) => new Date(p.created_at) > last7Days).length;
   };
 
   const getProjectTrend = () => {
     const last30Days = Array.from({ length: 30 }, (_, i) => {
       const date = subDays(new Date(), 29 - i);
       const count = projects.filter((p) => {
-        const createdDate = new Date(p.created_date);
+        const createdDate = new Date(p.created_at);
         return createdDate.toDateString() === date.toDateString();
       }).length;
 

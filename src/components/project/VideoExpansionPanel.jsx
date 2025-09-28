@@ -71,14 +71,14 @@ export default function VideoExpansionPanel({ video, project, onUpdate, isArchiv
 
             if (version) {
                 // 2. Fetch notes for that specific version
-                const versionNotes = await Note.filter({ video_version_id: version.id }, "-created_date");
+                const versionNotes = await Note.filter({ video_version_id: version.id }, "-created_at");
                 setNotes(versionNotes);
             } else {
                 setNotes([]);
             }
             
             // 3. Fetch approvals for the video
-            const videoApprovals = await Approval.filter({ scope: "video", scope_id: video.id }, "-created_date");
+            const videoApprovals = await Approval.filter({ scope: "video", scope_id: video.id }, "-created_at");
             setApprovals(videoApprovals);
 
         } catch (error) {
@@ -364,7 +364,7 @@ export default function VideoExpansionPanel({ video, project, onUpdate, isArchiv
                                     </div>
                                     <p className="text-sm text-[rgb(var(--text-primary))] break-words">{note.body}</p>
                                     <p className="text-xs text-[rgb(var(--text-secondary))] mt-2">
-                                        {format(new Date(note.created_date), "MMM d, h:mm a")}
+                                        {format(new Date(note.created_at), "MMM d, h:mm a")}
                                     </p>
                                 </div>
                             ))}

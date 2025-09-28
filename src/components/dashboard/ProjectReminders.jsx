@@ -32,7 +32,7 @@ export default function ProjectReminders() {
         user_id: user.id,
         type: 'project_reminder',
         is_read: false
-      }, '-created_date', 5);
+      }, '-created_at', 5);
       
       setReminderNotifications(notifications);
     } catch (error) {
@@ -103,7 +103,7 @@ export default function ProjectReminders() {
                       {notification.body}
                     </p>
                     <p className="text-amber-400/60 text-xs">
-                      {formatDistanceToNow(new Date(notification.created_date), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                     </p>
                   </div>
                   <div className="flex flex-col gap-2">

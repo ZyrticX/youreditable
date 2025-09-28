@@ -94,7 +94,7 @@ export default function NotificationCenter() {
     try {
       const userNotifications = await Notification.filter(
         { user_id: user.id }, 
-        '-created_date', 
+        '-created_at', 
         20
       );
       
@@ -230,7 +230,7 @@ export default function NotificationCenter() {
                             {notification.body}
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
-                            {formatDistanceToNow(new Date(notification.created_date), { addSuffix: true })}
+                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                           </p>
                         </div>
                         {notification.link && (

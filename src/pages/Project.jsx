@@ -167,7 +167,7 @@ export default function ProjectPage() {
       // Load notes with retry logic
       await delay(300);
       const allNotes = await retryApiCall(async () => {
-        return await Note.filter({}, "-created_date");
+        return await Note.filter({}, "-created_at");
       });
 
       // Filter notes for this project only

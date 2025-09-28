@@ -28,7 +28,7 @@ export default function ReviewHeader({ project }) {
                 </div>
                 <div className="hidden sm:flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  <span>{format(new Date(project.created_date), "MMM d")}</span>
+                  <span>{format(new Date(project.created_at), "MMM d")}</span>
                 </div>
               </div>
             </div>
