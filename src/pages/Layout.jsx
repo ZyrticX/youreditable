@@ -49,7 +49,7 @@ const mobileNavItems = [
 ];
 
 
-const publicPages = ['Review', 'Home', 'Features', 'Pricing', 'Faq', 'About', 'Contact', 'Terms', 'Privacy', 'Refund', 'SupabaseOnly'];
+const publicPages = ['Review', 'Home', 'Features', 'Pricing', 'Faq', 'About', 'Contact', 'Terms', 'Privacy', 'Refund', 'SupabaseOnly', 'Login', 'Register', 'ForgotPassword'];
 
 const BottomNavItem = ({ item, isActive }) =>
   <Link to={item.url} className={`flex flex-col items-center justify-center gap-1 flex-1 transition-colors ${isActive ? 'text-[rgb(var(--accent-primary))]' : 'text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))]'}`}>
@@ -69,7 +69,7 @@ function AppLayout({ children, currentPageName }) {
 
   const handleLogout = async () => {
     // Logout is now handled by Supabase auth through UserProvider
-    window.location.href = '/SupabaseOnly';
+    window.location.href = '/Login';
   };
 
   const getActivePath = () => {
@@ -106,7 +106,7 @@ function AppLayout({ children, currentPageName }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  const pagesWithoutLayout = ['Home', 'Review', 'Features', 'Pricing', 'Faq', 'About', 'Contact', 'Terms', 'Privacy', 'Refund'];
+  const pagesWithoutLayout = ['Home', 'Review', 'Features', 'Pricing', 'Faq', 'About', 'Contact', 'Terms', 'Privacy', 'Refund', 'Login', 'Register', 'ForgotPassword'];
   if (pagesWithoutLayout.includes(currentPageName)) {
     return (
       <div className="dark min-h-screen bg-[rgb(var(--surface-dark))]">

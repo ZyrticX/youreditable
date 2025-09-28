@@ -190,7 +190,7 @@ export default function HomePage() {
     if (path === '/dashboard') {
       navigate(createPageUrl('Dashboard'));
     } else if (path === '/login') {
-      window.location.href = 'https://youreditable.com/Dashboard';
+      navigate('/Login');
     } else {
       navigate(path);
     }
@@ -204,7 +204,7 @@ export default function HomePage() {
   };
 
   const handlePlanSelect = (planId) => {
-    window.location.href = 'https://youreditable.com/Dashboard';
+    navigate('/Login');
   };
 
   const toggleItem = (index) => {

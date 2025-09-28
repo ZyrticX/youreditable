@@ -114,7 +114,7 @@ export const UserProvider = ({ children }) => {
     };
 
     const currentPath = window.location.pathname;
-    const isPublicPage = ['/', '/Home', '/Features', '/Pricing', '/About', '/Contact', '/Terms', '/Privacy', '/SupabaseOnly', '/Faq', '/Refund'].includes(currentPath);
+    const isPublicPage = ['/', '/Home', '/Features', '/Pricing', '/About', '/Contact', '/Terms', '/Privacy', '/SupabaseOnly', '/Login', '/Register', '/ForgotPassword', '/Faq', '/Refund'].includes(currentPath);
     
     if (isLoading) {
         return (
@@ -139,8 +139,8 @@ export const UserProvider = ({ children }) => {
     const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
     
     if (!isLoading && !isAuthenticated && isProtectedRoute) {
-        console.log('Redirecting to SupabaseOnly from protected route:', currentPath);
-        window.location.href = '/SupabaseOnly';
+        console.log('Redirecting to Login from protected route:', currentPath);
+        window.location.href = '/Login';
         return null;
     }
     

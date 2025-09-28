@@ -46,6 +46,12 @@ import SupabaseTest from "./SupabaseTest";
 
 import SupabaseOnly from "./SupabaseOnly";
 
+import Login from "./Login";
+
+import Register from "./Register";
+
+import ForgotPassword from "./ForgotPassword";
+
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 
 const PAGES = {
@@ -95,6 +101,12 @@ const PAGES = {
     SupabaseTest: SupabaseTest,
     
     SupabaseOnly: SupabaseOnly,
+    
+    Login: Login,
+    
+    Register: Register,
+    
+    ForgotPassword: ForgotPassword,
     
 }
 
@@ -174,6 +186,12 @@ function PagesContent() {
                 <Route path="/SupabaseTest" element={<SupabaseTest />} />
                 
                 <Route path="/SupabaseOnly" element={<SupabaseOnly />} />
+                
+                <Route path="/Login" element={<Login />} />
+                
+                <Route path="/Register" element={<Register />} />
+                
+                <Route path="/ForgotPassword" element={<ForgotPassword />} />
                 
             </Routes>
         </Layout>
