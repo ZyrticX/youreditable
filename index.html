@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="https://base44.com/logo_v2.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Review App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Paddle.js Integration -->
+    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+    <script type="text/javascript">
+      // Paddle configuration
+      const PADDLE_CONFIG = {
+        // Use environment variables or fallback to sandbox
+        environment: window.location.hostname === 'localhost' ? 'sandbox' : 'production',
+        token: window.location.hostname === 'localhost' 
+          ? 'test_xxxxxxxxxxxxxxxxx' // Replace with your sandbox token
+          : window.location.hostname === 'www.youreditable.com'
+            ? 'live_xxxxxxxxxxxxxxxxx' // Replace with your live token for youreditable.com
+            : 'test_xxxxxxxxxxxxxxxxx', // Fallback to sandbox for other domains
+      };
+
+      // Price IDs for different plans (replace with your actual Paddle price IDs)
+      const PADDLE_PRICES = {
+        basic_monthly: 'pri_basic_monthly_id',
+        basic_annual: 'pri_basic_annual_id', 
+        pro_monthly: 'pri_pro_monthly_id',
+        pro_annual: 'pri_pro_annual_id'
+      };
+
+      // Initialize Paddle
+      try {
+        Paddle.Environment.set(PADDLE_CONFIG.environment);
+        Paddle.Initialize({
+          token: PADDLE_CONFIG.token,
+          checkout: {
+            settings: {
+              displayMode: "overlay", // Can be "overlay" or "inline"
+              theme: "dark",
+              locale: "en"
+            }
+          }
+        });
+        console.log('✅ Paddle initialized:', PADDLE_CONFIG.environment);
+      } catch (error) {
+        console.error('❌ Paddle initialization failed:', error);
+      }
+
+      // Payment functions for the app
+      window.guardedBuy = async (priceKey, planId) => {
+        console.log('🔄 Processing payment for:', planId, 'with price key:', priceKey);
+        
+        try {
+          const priceId = PADDLE_PRICES[priceKey];
+          if (!priceId) {
+            throw new Error(`Price ID not found for: ${priceKey}`);
+          }
+
+          // Get current user info (assuming it's available globally)
+          const user = window.currentUser || { email: 'user@example.com' };
+
+          const checkoutData = {
+            items: [{ priceId: priceId, quantity: 1 }],
+            customer: {
+              email: user.email
+            },
+            customData: {
+              planId: planId,
+              userId: user.id || 'unknown'
+            }
+          };
+
+          console.log('🚀 Opening Paddle checkout:', checkoutData);
+          
+          // Open Paddle checkout
+          Paddle.Checkout.open(checkoutData);
+          
+        } catch (error) {
+          console.error('❌ Payment error:', error);
+          alert('Payment system error. Please try again or contact support.');
+        }
+      };
+
+      window.goManageBilling = async () => {
+        try {
+          // In a real implementation, you'd get the customer ID from your database
+          const user = window.currentUser || {};
+          
+          if (!user.paddleCustomerId) {
+            alert('No billing information found. Please contact support.');
+            return;
+          }
+
+          // Open Paddle billing portal
+          // Note: This requires the customer management feature to be enabled in Paddle
+          console.log('🏦 Opening billing management for customer:', user.paddleCustomerId);
+          
+          // For now, redirect to a billing management page or show instructions
+          alert('🏦 Billing Management\n\nTo manage your subscription:\n• Cancel or modify your plan\n• Update payment methods\n• View billing history\n\nContact support for assistance.');
+          
+        } catch (error) {
+          console.error('❌ Billing management error:', error);
+          alert('Unable to access billing management. Please contact support.');
+        }
+      };
+
+      // Listen for Paddle events
+      Paddle.Checkout.on('checkout.completed', (data) => {
+        console.log('✅ Payment completed:', data);
+        
+        // Show success message
+        alert('🎉 Payment successful!\n\nYour subscription is being activated. You may need to refresh the page to see changes.');
+        
+        // Optionally reload the page after a delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      });
+
+      Paddle.Checkout.on('checkout.closed', (data) => {
+        console.log('❌ Checkout closed:', data);
+      });
+
+      Paddle.Checkout.on('checkout.error', (error) => {
+        console.error('❌ Checkout error:', error);
+        alert('Payment error occurred. Please try again.');
+      });
+
+      console.log('🎯 Paddle payment system loaded');
+      console.log('💡 Environment:', PADDLE_CONFIG.environment);
+      console.log('🔑 Available price keys:', Object.keys(PADDLE_PRICES));
+    </script>
+  </body>
+</html>
