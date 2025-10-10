@@ -260,6 +260,12 @@ export default function ProjectPage() {
       return;
     }
 
+    // Show confirmation popup
+    const confirmed = window.confirm("Are you sure you want to approve this project? This action will mark all videos and notes as approved.");
+    if (!confirmed) {
+      return;
+    }
+
     setIsLoading(true);
     try {
         const videoUpdatePromises = videos.map(video =>
@@ -509,6 +515,18 @@ export default function ProjectPage() {
       toast.error("An unexpected error occurred. Please refresh.");
       return;
     }
+
+    // Check if user has a subscription (not free plan)
+    const userPlanLevel = user.plan_level || 'free';
+    if (userPlanLevel === 'free') {
+      const upgradeConfirmed = window.confirm("You need a subscription to extend review links. Would you like to upgrade your plan?");
+      if (upgradeConfirmed) {
+        // Redirect to pricing/subscription page
+        window.open('/pricing', '_blank');
+      }
+      return;
+    }
+
     setIsLoading(true);
     try {
       const newExpiryDate = new Date();
@@ -522,6 +540,9 @@ export default function ProjectPage() {
 
       // Reload project data to reflect changes
       await loadProject();
+      
+      // Show success confirmation popup
+      window.alert("Success! Review link has been extended by 7 days.");
       toast.success("Review link extended by 7 days.");
     } catch (error) {
       if (error.response?.status === 429) {
@@ -540,6 +561,13 @@ export default function ProjectPage() {
       toast.error("An unexpected error occurred. Please refresh.");
       return;
     }
+
+    // Show confirmation popup
+    const confirmed = window.confirm("Are you sure you want to generate a new review link? This will invalidate the current link.");
+    if (!confirmed) {
+      return;
+    }
+
     setIsLoading(true);
     try {
       const newToken = generateUUID().replace(/-/g, '').substring(0, 32);
@@ -555,6 +583,9 @@ export default function ProjectPage() {
 
       // Reload project data to reflect changes
       await loadProject();
+      
+      // Show success confirmation popup
+      window.alert("Success! A new review link has been generated. The old link is no longer valid.");
       toast.success("New review link generated.");
     } catch (error) {
       if (error.response?.status === 429) {
