@@ -4,7 +4,8 @@ import { Project } from "@/api/entities";
 import { Video } from "@/api/entities";
 import { VideoVersion } from "@/api/entities";
 import { Note } from "@/api/entities";
-import { Approval } from "@/api/entities";
+import { Approval, Notification } from "@/api/entities";
+import { retryApiCall } from "@/api/functions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, MessageSquare, CheckCircle2 } from "lucide-react";
@@ -13,6 +14,7 @@ import { isAfter } from "date-fns";
 import { toast } from "sonner";
 import { SendEmail } from "@/api/integrations";
 import { User as UserEntity } from "@/api/entities";
+import { supabaseClient } from "@/api/supabaseClient";
 
 import VideoCarousel from "../components/review/VideoCarousel";
 import ReviewHeader from "../components/review/ReviewHeader";
@@ -20,6 +22,7 @@ import QuickNotePopup from "../components/review/QuickNotePopup";
 import ActionsPopup from "../components/review/ActionsPopup";
 import DesktopReviewInterface from "../components/review/DesktopReviewInterface";
 import { notifyNewFeedback, notifyVideoApproval, notifyProjectApproval } from "../components/notifications/NotificationHelper";
+import { migrateVideoUrls } from "../utils/urlMigration";
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -47,6 +50,7 @@ export default function Review() {
   const [videos, setVideos] = useState([]);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [notes, setNotes] = useState([]);
+  const [existingNotes, setExistingNotes] = useState([]); // הערות קיימות מהמסד נתונים
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [submitBatchId] = useState(() => {
@@ -113,7 +117,12 @@ export default function Review() {
         if (!video.current_version_id) return null;
         try {
           const versions = await retryApiCall(() => VideoVersion.filter({ id: video.current_version_id }));
-          return versions.length > 0 ? { ...video, currentVersion: versions[0] } : null;
+          if (versions.length > 0) {
+            const videoWithVersion = { ...video, currentVersion: versions[0] };
+            // Migrate URLs to new domain if needed
+            return migrateVideoUrls(videoWithVersion);
+          }
+          return null;
         } catch {
           return null;
         }
@@ -121,11 +130,51 @@ export default function Review() {
       
       setVideos(videosWithVersions.filter(Boolean));
       
+      // Load existing notes for all videos
+      await loadExistingNotes(videosWithVersions.filter(Boolean));
+      
     } catch (error) {
       console.error("Error loading review data:", error);
       setError("Failed to load review. Please check the link and try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadExistingNotes = async (videoList) => {
+    try {
+      // Get all video version IDs
+      const versionIds = videoList
+        .filter(video => video.currentVersion)
+        .map(video => video.currentVersion.id);
+      
+      if (versionIds.length === 0) return;
+      
+      // Load all notes for these versions
+      const allNotes = await retryApiCall(() => Note.filter({}, "-created_at"));
+      
+      // Filter notes for this project's videos
+      const projectNotes = allNotes.filter(note => 
+        versionIds.includes(note.video_version_id)
+      );
+      
+      // Add video title to each note for display
+      const notesWithVideoInfo = projectNotes.map(note => {
+        const video = videoList.find(v => 
+          v.currentVersion && v.currentVersion.id === note.video_version_id
+        );
+        return {
+          ...note,
+          videoTitle: video ? video.title : 'Unknown Video'
+        };
+      });
+      
+      setExistingNotes(notesWithVideoInfo);
+      console.log(`Loaded ${notesWithVideoInfo.length} existing notes`);
+      
+    } catch (error) {
+      console.error("Error loading existing notes:", error);
+      // Don't fail the whole review if notes can't load
     }
   };
 
@@ -165,6 +214,7 @@ export default function Review() {
         video_version_id: note.video_version_id,
         timecode_ms: note.timecode_ms,
         body: note.body,
+        note_text: note.body, // תוקן - גם body וגם note_text
         submit_batch_id: batchId,
         reviewer_label: reviewerName || "Anonymous",
         status: 'pending',
@@ -244,15 +294,38 @@ export default function Review() {
     toast.info("Approving video...");
 
     try {
+      console.log('🎬 Approving video:', currentVideo.id);
+      
+      // Create approval record
       await retryApiCall(() => Approval.create({
-        scope: "video",
+        scope_type: "video", // לתאימות עם מדיניות RLS
+        scope: "video", // לתאימות עם NOT NULL constraint
         scope_id: currentVideo.id,
         version_id: currentVideo.currentVersion.id,
         approved_at: new Date().toISOString(),
         reviewer_label: reviewerName || "Anonymous"
       }));
 
-      await retryApiCall(() => Video.update(currentVideo.id, { status: "approved" }));
+      console.log('✅ Approval created successfully');
+
+      // Update video status - use direct Supabase call to avoid RLS issues
+      const { data: updatedVideo, error: updateError } = await supabaseClient.supabase
+        .from('videos')
+        .update({ 
+          status: "approved",
+          approved_at: new Date().toISOString(),
+          approved_by: reviewerName || "Anonymous"
+        })
+        .eq('id', currentVideo.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('❌ Video update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ Video status updated:', updatedVideo);
       
       const updatedVideos = videos.map(v => v.id === currentVideo.id ? {...v, status: 'approved'} : v);
       setVideos(updatedVideos);
@@ -341,6 +414,7 @@ export default function Review() {
         currentVideoIndex={currentVideoIndex}
         onVideoChange={setCurrentVideoIndex}
         notes={notes}
+        existingNotes={existingNotes} // הוספת ההערות הקיימות
         onAddNote={handleAddNote}
         onRemoveNote={handleRemoveNote}
         onSubmitNotes={handleSubmitNotes}
@@ -355,12 +429,46 @@ export default function Review() {
       <ReviewHeader project={project} />
       <main className="flex-1 pt-20 pb-28">
         {videos.length > 0 ? (
-          <VideoCarousel
-            videos={videos}
-            currentIndex={currentVideoIndex}
-            onIndexChange={setCurrentVideoIndex}
-            isTypingNote={isQuickNoteOpen}
-          />
+          <>
+            <VideoCarousel
+              videos={videos}
+              currentIndex={currentVideoIndex}
+              onIndexChange={setCurrentVideoIndex}
+              isTypingNote={isQuickNoteOpen}
+            />
+            
+            {/* Existing Notes Display */}
+            {existingNotes.length > 0 && (
+              <div className="absolute top-24 right-4 w-80 max-h-64 bg-[rgb(var(--surface-light))] border border-[rgb(var(--border-dark))] rounded-xl shadow-lg overflow-hidden z-20">
+                <div className="p-3 border-b border-[rgb(var(--border-dark))] bg-[rgb(var(--surface-dark))]">
+                  <h3 className="text-white font-medium text-sm flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4" />
+                    Previous Feedback ({existingNotes.length})
+                  </h3>
+                </div>
+                <div className="max-h-48 overflow-y-auto p-3 space-y-2">
+                  {existingNotes.map((note) => (
+                    <div key={note.id} className="p-2 bg-[rgb(var(--surface-dark))] rounded-lg border border-[rgb(var(--border-dark))]">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <span className="text-xs text-[rgb(var(--text-secondary))] font-medium">
+                          {note.videoTitle}
+                        </span>
+                        <span className="text-xs text-[rgb(var(--text-secondary))]">
+                          {note.reviewer_label || 'Anonymous'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-white">{note.body || note.note_text}</p>
+                      {note.timecode_ms && (
+                        <div className="text-xs text-[rgb(var(--accent-primary))] mt-1">
+                          @ {Math.floor(note.timecode_ms / 1000)}s
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         ) : (
            <div className="text-center text-white pt-20">No videos in this review.</div>
         )}

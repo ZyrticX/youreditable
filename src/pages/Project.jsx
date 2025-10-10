@@ -95,7 +95,7 @@ export default function ProjectPage() {
         setAccessDenied(true);
         setIsLoading(false);
     }
-  }, [projectId, user]);
+  }, [projectId, user?.id]); // תוקן - רק user.id במקום כל האובייקט user
 
   const loadProject = async () => {
     if (loadingRef.current) return;
@@ -277,7 +277,8 @@ export default function ProjectPage() {
         }));
 
         const approvalPromise = retryApiCall(() => Approval.create({
-            scope: 'project',
+            scope_type: 'project', // לתאימות עם מדיניות RLS
+            scope: 'project', // לתאימות עם NOT NULL constraint
             scope_id: project.id,
             approved_at: new Date().toISOString(),
             reviewer_label: `Editor Override (${user.full_name || user.email})`
@@ -323,13 +324,13 @@ export default function ProjectPage() {
         const response = await retryApiCall(() => googleDrive({ fileId }));
         const fileDetails = response.data;
 
-        if (fileDetails.status !== 'ok' || !fileDetails.video) {
+        if (fileDetails.status !== 'success' || !fileDetails.file) {
             toast.error(fileDetails.message || "Could not retrieve video details from Google Drive.");
             setIsLoading(false);
             return;
         }
 
-        const { video: driveVideoData } = fileDetails;
+        const { file: driveVideoData } = fileDetails;
 
         const existingVersions = await retryApiCall(() => VideoVersion.filter({ video_id: videoToUpdate.id }));
         const currentVersionNumber = existingVersions.length > 0 ? Math.max(...existingVersions.map(v => v.version_number)) : 0;

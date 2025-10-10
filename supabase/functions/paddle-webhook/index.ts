@@ -196,15 +196,20 @@ async function handleTransactionCompleted(supabase: any, data: any) {
 function getPlanFromSubscription(subscriptionData: any): string {
   // Map Paddle price IDs to plan levels
   const priceIdToPlan: { [key: string]: string } = {
-    'pri_basic_monthly_id': 'basic',
-    'pri_basic_annual_id': 'basic',
-    'pri_pro_monthly_id': 'pro', 
-    'pri_pro_annual_id': 'pro'
+    'pri_01k3k3fjtdf6wy1ktr7m0f7pgr': 'basic',  // Basic Monthly - $17/month
+    'pri_01k3k3webfm5f6pkvddezw46tn': 'basic',  // Basic Annual - $169/year
+    'pri_01k3k3jdvrmxq42xr5sj22mnc8': 'pro',    // Pro Monthly - $29/month
+    'pri_01k3k400egk5x3kbw1453v8fyz': 'pro'     // Pro Annual - $289/year
   }
 
   // Get the first item's price ID
   const priceId = subscriptionData.items?.[0]?.price?.id
-  return priceIdToPlan[priceId] || 'free'
+  console.log('🔍 Processing subscription with price ID:', priceId)
+  
+  const planLevel = priceIdToPlan[priceId] || 'free'
+  console.log('📊 Mapped to plan level:', planLevel)
+  
+  return planLevel
 }
 
 async function recordTransaction(supabase: any, userId: string, data: any, type: string) {

@@ -15,21 +15,21 @@
     <script type="text/javascript">
       // Paddle configuration
       const PADDLE_CONFIG = {
-        // Use environment variables or fallback to sandbox
-        environment: window.location.hostname === 'localhost' ? 'sandbox' : 'production',
-        token: window.location.hostname === 'localhost' 
-          ? 'test_xxxxxxxxxxxxxxxxx' // Replace with your sandbox token
-          : window.location.hostname === 'www.youreditable.com'
-            ? 'live_xxxxxxxxxxxxxxxxx' // Replace with your live token for youreditable.com
-            : 'test_xxxxxxxxxxxxxxxxx', // Fallback to sandbox for other domains
+        // Use production environment since you have live tokens
+        environment: 'production',
+        token: 'live_78bfb05443070c51ce8ee3aa7e8', // Your Paddle live token
+        environmentKey: 'apikey_01k3zv10jzrjp00ahsrpxxwdcr', // Your Paddle environment key
+        
+        // Flag to check if Paddle is properly configured
+        isConfigured: true // Set to true since we have real tokens now
       };
 
-      // Price IDs for different plans (replace with your actual Paddle price IDs)
+      // Price IDs for different plans (your actual Paddle price IDs)
       const PADDLE_PRICES = {
-        basic_monthly: 'pri_basic_monthly_id',
-        basic_annual: 'pri_basic_annual_id', 
-        pro_monthly: 'pri_pro_monthly_id',
-        pro_annual: 'pri_pro_annual_id'
+        basic_monthly: 'pri_01k3k3fjtdf6wy1ktr7m0f7pgr',    // $17.00/month - Editable Basic Monthly
+        basic_annual: 'pri_01k3k3webfm5f6pkvddezw46tn',     // $169.00/year - Editable Basic Annual
+        pro_monthly: 'pri_01k3k3jdvrmxq42xr5sj22mnc8',      // $29.00/month - Editable Pro Monthly
+        pro_annual: 'pri_01k3k400egk5x3kbw1453v8fyz'        // $289.00/year - Editable Pro Annual
       };
 
       // Initialize Paddle
@@ -46,6 +46,7 @@
           }
         });
         console.log('✅ Paddle initialized:', PADDLE_CONFIG.environment);
+        console.log('🔑 Using token:', PADDLE_CONFIG.token.substring(0, 10) + '...');
       } catch (error) {
         console.error('❌ Paddle initialization failed:', error);
       }
@@ -53,14 +54,23 @@
       // Payment functions for the app
       window.guardedBuy = async (priceKey, planId) => {
         console.log('🔄 Processing payment for:', planId, 'with price key:', priceKey);
+        console.log('🔧 Paddle config check - isConfigured:', PADDLE_CONFIG.isConfigured);
         
         try {
-          const priceId = PADDLE_PRICES[priceKey];
-          if (!priceId) {
-            throw new Error(`Price ID not found for: ${priceKey}`);
+          // Check if Paddle is properly configured
+          if (!PADDLE_CONFIG.isConfigured) {
+            console.warn('⚠️ Paddle is not configured with real tokens and price IDs');
+            alert('💳 Payment System Setup Required\n\nThe payment system needs to be configured with:\n• Real Paddle API tokens\n• Valid price IDs\n• Webhook endpoints\n\nContact the administrator to complete the setup.');
+            return;
           }
 
-          // Get current user info (assuming it's available globally)
+          const priceId = PADDLE_PRICES[priceKey];
+          if (!priceId || priceId.includes('YOUR_') || priceId.includes('_ID')) {
+            console.warn('⚠️ Price ID not configured for:', priceKey);
+            alert('💳 Price Configuration Required\n\nThe price ID for "' + priceKey + '" is not configured.\n\nPlease provide the actual Paddle Price IDs from your Paddle Dashboard.\n\nGo to: Paddle Dashboard > Catalog > Products > [Your Product] > Copy Price ID');
+            return;
+          }
+
           const user = window.currentUser || { email: 'user@example.com' };
 
           const checkoutData = {
@@ -75,13 +85,11 @@
           };
 
           console.log('🚀 Opening Paddle checkout:', checkoutData);
-          
-          // Open Paddle checkout
           Paddle.Checkout.open(checkoutData);
           
         } catch (error) {
           console.error('❌ Payment error:', error);
-          alert('Payment system error. Please try again or contact support.');
+          alert('💳 Payment Error\n\n' + error.message + '\n\nPlease contact support if this issue persists.');
         }
       };
 

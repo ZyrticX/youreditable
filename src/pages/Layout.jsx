@@ -62,14 +62,22 @@ function AppLayout({ children, currentPageName }) {
   const location = useLocation();
   const urlParams = new URLSearchParams(location.search);
   const currentFilter = urlParams.get("filter") || "all";
-  const { user, isAuthenticated } = useUser();
+  const { user, isAuthenticated, signOut } = useUser();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isScrollingDown, setIsScrollingDown] = React.useState(0);
   const [lastScrollY, setLastScrollY] = React.useState(0);
 
   const handleLogout = async () => {
-    // Logout is now handled by Supabase auth through UserProvider
-    window.location.href = '/Login';
+    try {
+      // Sign out from Supabase
+      await signOut();
+      // Redirect to home page
+      window.location.href = '/Home';
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Even if logout fails, redirect to home
+      window.location.href = '/Home';
+    }
   };
 
   const getActivePath = () => {

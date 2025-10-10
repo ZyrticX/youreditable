@@ -49,6 +49,16 @@ export class SupabaseClient {
     return { data, error }
   }
 
+  async signInWithGoogle() {
+    const { data, error } = await this.supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/Dashboard`
+      }
+    })
+    return { data, error }
+  }
+
   onAuthStateChange(callback) {
     return this.supabase.auth.onAuthStateChange(callback)
   }

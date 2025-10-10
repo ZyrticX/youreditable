@@ -21,6 +21,8 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 // Google Drive integration will be handled through Supabase Edge Functions
+import { googleDrive, getUserGoogleToken, downloadVideoFromDrive, listDriveFiles } from '@/api/functions';
+import { Project, Video, VideoVersion } from '@/api/entities';
 import { useUser } from '../components/auth/UserProvider';
 import { toast } from 'react-hot-toast'; // Assuming react-hot-toast is used for toasts
 
@@ -55,13 +57,11 @@ export default function Import() {
 
   const loadUserProjects = async () => {
     try {
-      // TODO: Replace with Supabase database query
-      // const { data: projects } = await SupabaseDB.from('projects').select('*').eq('user_id', user.id);
-      // For now, using empty array to prevent errors
-      const activeProjects = [];
-      setUserProjects(activeProjects);
+      const projects = await Project.filter({ user_id: user.id });
+      setUserProjects(projects);
     } catch (error) {
       console.error('Failed to load user projects:', error);
+      setUserProjects([]);
     }
   };
 
@@ -100,55 +100,58 @@ export default function Import() {
 
   const importFromDriveFolder = async (folderId) => {
     try {
-      // TODO: Replace with Supabase Edge Function call
-      // const response = await SupabaseDB.rpc('google_drive_import', { folder_id: folderId });
+      console.log('📁 Listing files in folder:', folderId);
       
-      // For demo purposes, return mock data
-      return {
-        status: "success",
-        videos: [
-          {
-            id: "demo-video-1",
-            title: "Sample Video 1",
-            previewUrl: "https://example.com/video1.mp4",
-            thumbnailLink: "https://example.com/thumb1.jpg"
-          },
-          {
-            id: "demo-video-2", 
-            title: "Sample Video 2",
-            previewUrl: "https://example.com/video2.mp4",
-            thumbnailLink: "https://example.com/thumb2.jpg"
-          }
-        ]
-      };
+      // Get user's Google access token
+      const accessToken = await getUserGoogleToken();
+      console.log('🔑 Access token available:', !!accessToken);
+      
+      // Use the new list-drive-files Edge Function
+      const response = await listDriveFiles({ folderId, accessToken });
+      console.log('📊 List files response:', response);
+      
+      return response.data;
     } catch (error) {
-      console.error('Drive import error:', error);
+      console.error('💥 Drive import error:', error);
       return {
         status: "error",
-        message: "Failed to connect to Google Drive. Please try again."
+        message: error.message || "Failed to connect to Google Drive. Please try again."
       };
     }
   };
 
   const handleUrlSubmit = async () => {
+    console.log('🚀 handleUrlSubmit called with URL:', driveUrl);
+    
     if (!driveUrl.trim()) {
+      console.log('❌ No URL provided');
       setError("Please enter a Google Drive folder URL.");
       return;
     }
 
     const id = extractFolderId(driveUrl);
+    console.log('📁 Extracted folder ID:', id);
+    
     if (!id) {
+      console.log('❌ Invalid folder ID');
       setError("Invalid Google Drive folder URL. Please check the format and try again.");
       return;
     }
 
+    console.log('⏳ Starting import process...');
     setIsLoading(true);
     setError("");
     setPermissionError(null);
     setFolderId(id);
 
-    const result = await importFromDriveFolder(id);
-    processImportResult(result);
+    try {
+      const result = await importFromDriveFolder(id);
+      console.log('📊 Import result:', result);
+      processImportResult(result);
+    } catch (error) {
+      console.error('💥 Import failed:', error);
+      setError(error.message || 'Import failed');
+    }
 
     setIsLoading(false);
   };
@@ -164,7 +167,7 @@ export default function Import() {
   };
 
   const processImportResult = (result) => {
-    if (result.status === "ok") {
+    if (result.status === "success") {
         setVideos(result.videos || []);
         const selections = {};
         (result.videos || []).forEach(video => {
@@ -173,11 +176,20 @@ export default function Import() {
         setSelectedVideos(selections);
         setProjectName("Video Review Project");
         setStep(2);
+        
+        // Show message if no videos found but folder access was successful
+        if (!result.videos || result.videos.length === 0) {
+          if (result.message) {
+            setError(result.message);
+          } else {
+            setError("No video files found in this folder. Make sure the folder contains video files or is publicly shared.");
+          }
+        }
     } else if (result.status === "permission_required") {
         setPermissionError(result);
         setStep(1); // Stay on step 1 to show the error
     } else if (result.status === "folder_not_found") {
-        setError("The link looks wrong or we can’t access it. Check the URL and try again.");
+        setError("The link looks wrong or we can't access it. Check the URL and try again.");
     } else {
         setError(result.message || "An unknown error occurred."); // Use result.message for error details
     }
@@ -227,33 +239,87 @@ export default function Import() {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
 
-      // TODO: Replace with Supabase database operations
-      // Example Supabase implementation:
-      /*
-      const { data: project, error } = await SupabaseDB.from('projects').insert({
+      // Create project in Supabase
+      const project = await Project.create({
         name: projectName,
         client_display_name: clientName,
         user_id: user.id,
         share_token: shareToken,
         share_expires_at: expiresAt.toISOString(),
         status: "active"
-      }).select().single();
+      });
       
-      if (error) throw error;
-      
+      // Create videos and download them to Supabase Storage
       for (let i = 0; i < selectedVideoList.length; i++) {
         const video = selectedVideoList[i];
-        // Create video and version records in Supabase
+        
+        // Create video record with pending status
+        const newVideo = await Video.create({
+          project_id: project.id,
+          title: video.title || `Video ${i + 1}`,
+          order_index: i + 1,
+          file_id: video.id, // Google Drive file ID
+          status: "processing" // Processing while downloading
+        });
+        
+        try {
+          // Download video from Google Drive to Supabase Storage
+          const accessToken = await getUserGoogleToken();
+          const downloadResult = await downloadVideoFromDrive({
+            fileId: video.id,
+            fileName: video.title || `video_${i + 1}.mp4`,
+            accessToken,
+            userId: user.id,
+            projectId: project.id
+          });
+
+          if (downloadResult.success) {
+            // Create video version with Supabase Storage URL
+            const newVersion = await VideoVersion.create({
+              video_id: newVideo.id,
+              version_number: 1,
+              source_url: downloadResult.data.fileUrl, // Supabase Storage URL - תוקן!
+              thumbnail_url: downloadResult.data.thumbnailUrl,
+              file_size: downloadResult.data.fileSize,
+              mime_type: downloadResult.data.mimeType,
+              storage_path: downloadResult.data.storagePath,
+              status: "active"
+            });
+
+            // Update video status to pending_review AND set current_version_id
+            await Video.update(newVideo.id, { 
+              status: "pending_review", // תוקן - סרטון מוכן לביקורת
+              current_version_id: newVersion.id
+            });
+            
+            console.log(`✅ Video ${video.title} downloaded and stored successfully`);
+          } else {
+            throw new Error(downloadResult.error || 'Download failed');
+          }
+        } catch (downloadError) {
+          console.error(`Failed to download video ${video.title}:`, downloadError);
+          
+          // Fallback: Create version with Google Drive URL
+          const fallbackVersion = await VideoVersion.create({
+            video_id: newVideo.id,
+            version_number: 1,
+            source_url: video.previewUrl, // Fallback to Google Drive preview - תוקן!
+            thumbnail_url: video.thumbnailLink,
+            file_size: video.size || null,
+            mime_type: video.mimeType || 'video/mp4',
+            status: "active"
+          });
+
+          // Update video status to pending_review but with warning
+          await Video.update(newVideo.id, { 
+            status: "pending_review", // תוקן - גם fallback מוכן לביקורת
+            current_version_id: fallbackVersion.id,
+            notes: "Video stored as Google Drive link (download failed)"
+          });
+          
+          console.warn(`⚠️ Video ${video.title} stored as Google Drive link`);
+        }
       }
-      */
-      
-      // For demo purposes, simulate project creation
-      const project = { 
-        id: generateUUID(), 
-        name: projectName,
-        client_display_name: clientName,
-        user_id: user.id
-      };
 
       // After successful project creation, reload projects to update the count
       await loadUserProjects();

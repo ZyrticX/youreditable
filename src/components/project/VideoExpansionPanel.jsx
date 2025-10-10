@@ -107,8 +107,8 @@ export default function VideoExpansionPanel({ video, project, onUpdate, isArchiv
 
         try {
             await VideoEntity.update(video.id, {
-                status: newStatus,
-                last_status_change_at: new Date().toISOString()
+                status: newStatus
+                // הוסר last_status_change_at - יתעדכן אוטומטית בטריגר
             });
             toast.success(`Video marked as ${newStatus.replace('_', ' ')}.`);
             onUpdate?.(); // Callback to parent to refresh project data or videos

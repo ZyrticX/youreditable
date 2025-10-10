@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,9 +19,18 @@ export default function ShareLinkCard({ project, onExtendLink, onGenerateNewLink
     const [isCopying, setCopying] = useState(false);
     const [isExtending, setIsExtending] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [expiryDate, setExpiryDate] = useState(null);
+
+    // Update expiry date when project changes
+    useEffect(() => {
+        if (project?.share_expires_at) {
+            setExpiryDate(new Date(project.share_expires_at));
+        } else {
+            setExpiryDate(null);
+        }
+    }, [project?.share_expires_at]);
 
     const shareUrl = `${window.location.origin}/Review?token=${project.share_token}`;
-    const expiryDate = project.share_expires_at ? new Date(project.share_expires_at) : null;
     const isExpired = expiryDate && !isAfter(expiryDate, new Date());
     const daysUntilExpiry = expiryDate ? differenceInDays(expiryDate, new Date()) : null;
 
@@ -42,6 +51,12 @@ export default function ShareLinkCard({ project, onExtendLink, onGenerateNewLink
         setIsExtending(true);
         try {
             await onExtendLink();
+            
+            // Update local expiry date immediately for better UX
+            const newExpiryDate = new Date();
+            newExpiryDate.setDate(newExpiryDate.getDate() + 7);
+            setExpiryDate(newExpiryDate);
+            
             toast.success('Link extended successfully!');
         } catch (error) {
             console.error('Failed to extend link:', error);
@@ -55,6 +70,12 @@ export default function ShareLinkCard({ project, onExtendLink, onGenerateNewLink
         setIsGenerating(true);
         try {
             await onGenerateNewLink();
+            
+            // Update local expiry date immediately for better UX
+            const newExpiryDate = new Date();
+            newExpiryDate.setDate(newExpiryDate.getDate() + 7);
+            setExpiryDate(newExpiryDate);
+            
             toast.success('New review link generated!');
         } catch (error) {
             console.error('Failed to generate new link:', error);

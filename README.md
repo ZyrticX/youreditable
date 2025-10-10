@@ -1,240 +1,183 @@
-# 🎬 Video Review App
+# Supabase CLI
 
-A modern, full-featured video review application built with React, Vite, and Supabase. Perfect for video creators, agencies, and teams who need to collect feedback and approvals on video content.
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-## ✨ Features
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
-- 🎥 **Video Project Management** - Organize videos into projects
-- 💬 **Real-time Feedback** - Clients can leave timestamped comments
-- ✅ **Approval Workflow** - Track video approvals and revisions
-- 🔗 **Shareable Review Links** - Send secure links to clients (no signup required)
-- 📱 **Responsive Design** - Works perfectly on desktop and mobile
-- 🔔 **Real-time Notifications** - Get notified when feedback is received
-- 🎨 **Modern UI** - Beautiful interface built with Tailwind CSS and shadcn/ui
-- 🔒 **Secure Authentication** - Powered by Supabase Auth
-- ⚡ **Real-time Updates** - See changes instantly across all devices
+This repository contains all the functionality for Supabase CLI.
 
-## 🚀 Quick Start
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
 
-### Local Development
+## Getting started
 
-1. **Clone and install:**
-   ```bash
-   git clone <your-repo>
-   cd video-review-app
-   npm install
-   ```
+### Install the CLI
 
-2. **Set up environment:**
-   ```bash
-   cp env.example .env
-   # Edit .env with your Supabase credentials
-   ```
-
-3. **Start development server:**
-   ```bash
-   npm run dev
-   ```
-
-4. **Open your browser:**
-   ```
-   http://localhost:5173
-   ```
-
-### Production Deployment
-
-See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for complete deployment instructions.
-
-## 🗄️ Database Setup
-
-1. **Create Supabase project** at [supabase.com](https://supabase.com)
-
-2. **Run database schema:**
-   - Copy contents of `supabase-schema.sql`
-   - Paste into Supabase SQL Editor
-   - Click "Run"
-
-3. **Enable real-time features:**
-   - Run `setup-realtime.sql` in SQL Editor
-
-4. **Update environment variables:**
-   ```env
-   VITE_SUPABASE_URL=https://your-project.supabase.co
-   VITE_SUPABASE_ANON_KEY=your-anon-key
-   ```
-
-## 📁 Project Structure
-
-```
-├── src/
-│   ├── api/                 # API layer and entities
-│   │   ├── entities.js      # Database entities (Supabase)
-│   │   ├── supabaseClient.js # Supabase client
-│   │   ├── functions.js     # Helper functions
-│   │   └── integrations.js  # External integrations
-│   ├── components/          # React components
-│   │   ├── auth/           # Authentication components
-│   │   ├── dashboard/      # Dashboard components
-│   │   ├── project/        # Project management
-│   │   ├── review/         # Video review interface
-│   │   ├── ui/            # UI components (shadcn/ui)
-│   │   └── ...
-│   ├── hooks/              # Custom React hooks
-│   ├── pages/              # Page components
-│   ├── lib/               # Utilities and configuration
-│   └── utils/             # Helper utilities
-├── supabase-schema.sql     # Database schema
-├── setup-realtime.sql     # Real-time configuration
-├── migrate-to-supabase.js  # Migration script (if needed)
-├── DEPLOYMENT_GUIDE.md    # Deployment instructions
-└── docker-compose.yml     # Docker deployment
-```
-
-## 🛠️ Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm run build:prod` - Build with linting
-- `npm run serve` - Serve production build
-
-## 🐳 Docker Deployment
-
-### Quick Deploy with Docker
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
 ```bash
-# Build and start
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
+npm i supabase --save-dev
 ```
 
-### Manual Docker Build
+To install the beta release channel:
 
 ```bash
-# Build image
-docker build -t video-review-app .
-
-# Run container
-docker run -d -p 80:80 video-review-app
+npm i supabase@beta --save-dev
 ```
 
-## 🔧 Configuration
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
 
-### Environment Variables
+```
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
+```
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `VITE_SUPABASE_URL` | Supabase project URL | ✅ |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key | ✅ |
-| `VITE_APP_NAME` | Application name | ❌ |
-| `VITE_APP_URL` | Application URL | ❌ |
-| `VITE_GOOGLE_ANALYTICS_ID` | Google Analytics ID | ❌ |
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
 
-### Supabase Configuration
+<details>
+  <summary><b>macOS</b></summary>
 
-The app uses Supabase for:
-- **Authentication** - User signup/login
-- **Database** - All application data
-- **Real-time** - Live updates
-- **Storage** - File uploads (future feature)
+  Available via [Homebrew](https://brew.sh). To install:
 
-## 📱 How It Works
+  ```sh
+  brew install supabase/tap/supabase
+  ```
 
-1. **Create Project** - Users create video review projects
-2. **Upload Videos** - Import videos from Google Drive or upload directly
-3. **Share Review Link** - Generate secure, time-limited review links
-4. **Collect Feedback** - Clients leave timestamped comments without signing up
-5. **Track Approvals** - See which videos are approved and which need changes
-6. **Real-time Updates** - All changes sync instantly across devices
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
 
-## 🎯 Use Cases
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
 
-- **Video Agencies** - Client review and approval workflow
-- **Content Creators** - Get feedback from collaborators
-- **Marketing Teams** - Review video campaigns before publishing
-- **Freelancers** - Professional client presentation
-- **Educational** - Student project reviews
+<details>
+  <summary><b>Windows</b></summary>
 
-## 🔒 Security Features
+  Available via [Scoop](https://scoop.sh). To install:
 
-- **Row Level Security** - Database access controlled by user
-- **Secure Review Links** - Time-limited, token-based access
-- **Authentication** - Secure user management via Supabase
-- **HTTPS Only** - All traffic encrypted
-- **Input Validation** - All user inputs validated
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
 
-## 🚀 Performance
+  To upgrade:
 
-- **Fast Loading** - Optimized build with code splitting
-- **Real-time Updates** - Instant feedback without page refresh
-- **Mobile Optimized** - Responsive design for all devices
-- **CDN Ready** - Static assets can be served from CDN
-- **Database Optimization** - Efficient queries with proper indexing
+  ```powershell
+  scoop update supabase
+  ```
+</details>
 
-## 🔄 Migration from Base44
+<details>
+  <summary><b>Linux</b></summary>
 
-If you're migrating from Base44:
+  Available via [Homebrew](https://brew.sh) and Linux packages.
 
-1. Set up Supabase database using the schema files
-2. Configure environment variables
-3. Run the migration script: `node migrate-to-supabase.js`
-4. Test all functionality
+  #### via Homebrew
 
-See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for detailed instructions.
+  To install:
 
-## 🛠️ Development
+  ```sh
+  brew install supabase/tap/supabase
+  ```
 
-### Adding New Features
+  To upgrade:
 
-1. Create components in appropriate directories
-2. Add database tables via Supabase migrations
-3. Update entity classes in `src/api/entities.js`
-4. Add proper TypeScript types (future enhancement)
+  ```sh
+  brew upgrade supabase
+  ```
 
-### Database Changes
+  #### via Linux packages
 
-1. Make changes in Supabase dashboard
-2. Export schema updates
-3. Update `supabase-schema.sql`
-4. Test with fresh database
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
 
-## 📊 Monitoring
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
 
-- **Health Check** - Available at `/health`
-- **Error Tracking** - Configure Sentry (optional)
-- **Analytics** - Google Analytics support
-- **Performance** - Monitor via browser dev tools
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
 
-## 🤝 Contributing
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
 
-## 📄 License
+<details>
+  <summary><b>Other Platforms</b></summary>
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
 
-## 🆘 Support
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
 
-- **Documentation** - Check the guides in this repository
-- **Issues** - Report bugs via GitHub issues
-- **Deployment Help** - See DEPLOYMENT_GUIDE.md
+  Add a symlink to the binary in `$PATH` for easier access:
 
-## 🎉 Success Stories
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
 
-Perfect for:
-- Video production companies managing client reviews
-- Marketing agencies collecting campaign feedback  
-- Content creators collaborating with teams
-- Educational institutions for project reviews
-- Any business that needs video feedback workflows
+  This works on other non-standard Linux distros.
+</details>
 
----
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
 
-**Ready to deploy?** Follow the [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) to get your app running on your own domain with Supabase!
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
+
+```bash
+supabase bootstrap
+```
+
+Or using npx:
+
+```bash
+npx supabase bootstrap
+```
+
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
+
+## Docs
+
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
+
+## Breaking changes
+
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
+
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
+```

@@ -10,41 +10,26 @@ export const UserProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [authInitialized, setAuthInitialized] = useState(false);
 
     useEffect(() => {
+        // Prevent multiple initializations
+        if (authInitialized) return;
+        
         const currentPath = window.location.pathname;
         const isPublicPage = ['/', '/Home', '/Features', '/Pricing', '/About', '/Contact', '/Terms', '/Privacy', '/SupabaseOnly', '/Faq', '/Refund'].includes(currentPath);
         
         const initializeUser = async () => {
             setIsLoading(true);
             try {
-                // Only check authentication for protected routes or when explicitly needed
-                if (!isPublicPage) {
-                    const { session } = await SupabaseAuth.getCurrentSession();
-                    
-                    if (session?.user) {
-                        setUser(session.user);
-                        setIsAuthenticated(true);
-                    } else {
-                        setUser(null);
-                        setIsAuthenticated(false);
-                    }
+                const { session } = await SupabaseAuth.getCurrentSession();
+                
+                if (session?.user) {
+                    setUser(session.user);
+                    setIsAuthenticated(true);
                 } else {
-                    // For public pages, just check if there's a session without redirecting
-                    try {
-                        const { session } = await SupabaseAuth.getCurrentSession();
-                        if (session?.user) {
-                            setUser(session.user);
-                            setIsAuthenticated(true);
-                        } else {
-                            setUser(null);
-                            setIsAuthenticated(false);
-                        }
-                    } catch (error) {
-                        // Silently fail for public pages
                     setUser(null);
                     setIsAuthenticated(false);
-                    }
                 }
             } catch (error) {
                 console.log("Authentication check failed:", error.message);
@@ -52,23 +37,40 @@ export const UserProvider = ({ children }) => {
                 setIsAuthenticated(false);
             } finally {
                 setIsLoading(false);
+                setAuthInitialized(true);
             }
         };
         
         initializeUser();
 
+        // Set up auth state listener only once
         const { data: { subscription } } = SupabaseAuth.onAuthStateChange(
             async (event, session) => {
-                console.log('Supabase auth state changed:', event, session);
+                console.log('🔐 Supabase auth event:', event, session?.user?.email);
                 
                 if (event === 'SIGNED_IN' && session?.user) {
+                    console.log('✅ User signed in, updating state');
                     setUser(session.user);
                     setIsAuthenticated(true);
+                    setIsLoading(false);
+                    
+                    // Force redirect to Dashboard after successful login
+                    const currentPath = window.location.pathname;
+                    if (currentPath === '/Login' || currentPath === '/Register') {
+                        console.log('🚀 Redirecting to Dashboard after login');
+                        setTimeout(() => {
+                            window.location.href = '/Dashboard';
+                        }, 100);
+                    }
                 } else if (event === 'SIGNED_OUT') {
+                    console.log('👋 User signed out');
                     setUser(null);
                     setIsAuthenticated(false);
+                    setIsLoading(false);
                 } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+                    console.log('🔄 Token refreshed');
                     setUser(session.user);
+                    setIsAuthenticated(true);
                 }
             }
         );
@@ -76,7 +78,7 @@ export const UserProvider = ({ children }) => {
         return () => {
             subscription?.unsubscribe();
         };
-    }, []);
+    }, [authInitialized]);
 
     // Expose current user globally for Paddle integration
     useEffect(() => {
@@ -106,6 +108,11 @@ export const UserProvider = ({ children }) => {
     const signOut = async () => {
         const { error } = await SupabaseAuth.signOut();
         return { error };
+    };
+
+    const signInWithGoogle = async () => {
+        const { data, error } = await SupabaseAuth.signInWithGoogle();
+        return { data, error };
     };
 
     const updateUserProfile = async (updates) => {
@@ -144,6 +151,15 @@ export const UserProvider = ({ children }) => {
         return null;
     }
     
+    // Debug auth state
+    console.log('UserProvider state:', { 
+        hasUser: !!user, 
+        userEmail: user?.email,
+        isLoading, 
+        isAuthenticated,
+        authInitialized 
+    });
+
     return (
         <UserContext.Provider value={{ 
             user, 
@@ -153,6 +169,7 @@ export const UserProvider = ({ children }) => {
             signIn,
             signUp,
             signOut,
+            signInWithGoogle,
             updateUserProfile
         }}>
             {children}

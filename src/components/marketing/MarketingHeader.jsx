@@ -3,12 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { createPageUrl } from '@/utils';
 import { motion } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User, Settings, LogOut } from 'lucide-react';
+import { useUser } from '../auth/UserProvider';
 
 export default function MarketingHeader() {
     const navigate = useNavigate();
+    const { isAuthenticated, user, signOut } = useUser();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
 
     const handleCTA = (path) => {
         if (path === '/login') {
@@ -90,8 +93,59 @@ export default function MarketingHeader() {
                         ))}
                     </nav>
                     <div className="hidden md:flex items-center gap-4">
-                        <Button onClick={() => handleCTA('/login')} variant="ghost" className="text-white hover:bg-white/10">Log In</Button>
-                        <Button onClick={() => handleCTA('/login')} className="neumorphic-btn">Start Free</Button>
+                        {isAuthenticated ? (
+                            <div className="relative">
+                                <Button 
+                                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                    variant="ghost" 
+                                    className="text-white hover:bg-white/10 flex items-center gap-2"
+                                >
+                                    <User className="w-4 h-4" />
+                                    {user?.email?.split('@')[0] || 'User'}
+                                </Button>
+                                {userMenuOpen && (
+                                    <div className="absolute right-0 top-full mt-2 w-48 bg-slate-900 border border-slate-700 rounded-lg shadow-lg py-2 z-50">
+                                        <button
+                                            onClick={() => {
+                                                navigate('/Dashboard');
+                                                setUserMenuOpen(false);
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-white hover:bg-slate-800 flex items-center gap-2"
+                                        >
+                                            <User className="w-4 h-4" />
+                                            Dashboard
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                navigate('/Settings');
+                                                setUserMenuOpen(false);
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-white hover:bg-slate-800 flex items-center gap-2"
+                                        >
+                                            <Settings className="w-4 h-4" />
+                                            Settings
+                                        </button>
+                                        <hr className="my-2 border-slate-700" />
+                                        <button
+                                            onClick={async () => {
+                                                await signOut();
+                                                setUserMenuOpen(false);
+                                                navigate('/Home');
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-red-400 hover:bg-slate-800 flex items-center gap-2"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                <Button onClick={() => handleCTA('/login')} variant="ghost" className="text-white hover:bg-white/10">Log In</Button>
+                                <Button onClick={() => handleCTA('/login')} className="neumorphic-btn">Start Free</Button>
+                            </>
+                        )}
                     </div>
                     <div className="md:hidden">
                         <Button onClick={() => setIsMenuOpen(true)} variant="ghost" size="icon" className="text-white">
@@ -146,8 +200,49 @@ export default function MarketingHeader() {
                             ))}
                         </nav>
                         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col gap-4">
-                            <Button onClick={() => handleCTA('/login')} variant="outline" className="w-full text-white border-white/20 hover:bg-white/10">Log In</Button>
-                            <Button onClick={() => handleCTA('/login')} className="w-full neumorphic-btn">Start Free</Button>
+                            {isAuthenticated ? (
+                                <>
+                                    <Button 
+                                        onClick={() => {
+                                            navigate('/Dashboard');
+                                            setIsMenuOpen(false);
+                                        }}
+                                        variant="outline" 
+                                        className="w-full text-white border-white/20 hover:bg-white/10 flex items-center gap-2"
+                                    >
+                                        <User className="w-4 h-4" />
+                                        Dashboard
+                                    </Button>
+                                    <Button 
+                                        onClick={() => {
+                                            navigate('/Settings');
+                                            setIsMenuOpen(false);
+                                        }}
+                                        variant="outline" 
+                                        className="w-full text-white border-white/20 hover:bg-white/10 flex items-center gap-2"
+                                    >
+                                        <Settings className="w-4 h-4" />
+                                        Settings
+                                    </Button>
+                                    <Button 
+                                        onClick={async () => {
+                                            await signOut();
+                                            setIsMenuOpen(false);
+                                            navigate('/Home');
+                                        }}
+                                        variant="outline" 
+                                        className="w-full text-red-400 border-red-400/20 hover:bg-red-400/10 flex items-center gap-2"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        Sign Out
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <Button onClick={() => handleCTA('/login')} variant="outline" className="w-full text-white border-white/20 hover:bg-white/10">Log In</Button>
+                                    <Button onClick={() => handleCTA('/login')} className="w-full neumorphic-btn">Start Free</Button>
+                                </>
+                            )}
                         </div>
                     </motion.div>
                 </div>

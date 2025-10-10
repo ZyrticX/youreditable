@@ -6,7 +6,7 @@ import Project from "./Project";
 
 import Review from "./Review";
 
-import Settings from "./Settings";
+import Settings from "./SettingsFixed";
 
 import Projects from "./Projects";
 

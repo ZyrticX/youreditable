@@ -4,6 +4,7 @@ export const SupabaseAuth = {
   signUp: (email, password, options) => supabaseClient.signUp(email, password, options),
   signIn: (email, password) => supabaseClient.signIn(email, password),
   signOut: () => supabaseClient.signOut(),
+  signInWithGoogle: () => supabaseClient.signInWithGoogle(),
   getCurrentUser: () => supabaseClient.getCurrentUser(),
   getCurrentSession: () => supabaseClient.getCurrentSession(),
   updateUser: (updates) => supabaseClient.updateUser(updates),

@@ -18,8 +18,8 @@ export const notifyNewFeedback = (userId, projectName, noteCount, reviewerName, 
     user_id: userId,
     type: 'new_feedback',
     title: `New Feedback on ${projectName}`,
-    body: `${reviewerName || 'A client'} left ${noteCount} new note(s).`,
-    link: createPageUrl(`Project?id=${projectId}`)
+    message: `${reviewerName || 'A client'} left ${noteCount} new note(s).`, // תוקן מ-body ל-message
+    data: { link: createPageUrl(`Project?id=${projectId}`) } // moved to data object
   });
 };
 
@@ -28,8 +28,8 @@ export const notifyVideoApproval = (userId, videoTitle, projectName, reviewerNam
     user_id: userId,
     type: 'video_approved',
     title: `Video Approved: ${videoTitle}`,
-    body: `${reviewerName || 'A client'} approved a video in the project "${projectName}".`,
-    link: createPageUrl(`Project?id=${projectId}`)
+    message: `${reviewerName || 'A client'} approved a video in the project "${projectName}".`, // תוקן מ-body ל-message
+    data: { link: createPageUrl(`Project?id=${projectId}`) } // moved to data object
   });
 };
 
@@ -38,8 +38,8 @@ export const notifyProjectApproval = (userId, projectName, reviewerName, project
     user_id: userId,
     type: 'project_approved',
     title: `Project Approved: ${projectName}`,
-    body: `Congratulations! ${reviewerName || 'A client'} approved all videos.`,
-    link: createPageUrl(`Project?id=${projectId}`)
+    message: `Congratulations! ${reviewerName || 'A client'} approved all videos.`, // תוקן מ-body ל-message
+    data: { link: createPageUrl(`Project?id=${projectId}`) } // moved to data object
   });
 };
 

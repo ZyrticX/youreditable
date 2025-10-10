@@ -53,11 +53,11 @@ export default function AddVideoModal({ isOpen, onOpenChange, project, videos, o
       const response = await googleDrive({ fileId });
       const fileDetails = response.data;
 
-      if (fileDetails.status !== 'ok' || !fileDetails.video) {
+      if (fileDetails.status !== 'success' || !fileDetails.file) {
         throw new Error(fileDetails.message || 'Could not retrieve video details from Google Drive.');
       }
 
-      const { video: driveVideoData } = fileDetails;
+      const { file: driveVideoData } = fileDetails;
       
       const highestOrderIndex = videos.length > 0 ? Math.max(...videos.map(v => v.order_index || 0)) : 0;
 
@@ -117,7 +117,7 @@ export default function AddVideoModal({ isOpen, onOpenChange, project, videos, o
             Add New Video to Project
           </DialogTitle>
           <DialogDescription className="text-[rgb(var(--text-secondary))] pt-1">
-            Paste the Google Drive URL of the video you want to add.
+            Paste the Google Drive URL of the video you want to add. Works with publicly shared files.
           </DialogDescription>
         </DialogHeader>
 

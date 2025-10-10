@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Database, Users, Zap, Shield, CheckCircle } from 'lucide-react';
-import { useSupabaseAuth } from '@/hooks/useSupabase';
+import { useUser } from '../components/auth/UserProvider';
 
 const SupabaseStatusCard = () => {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -76,7 +76,7 @@ const SupabaseStatusCard = () => {
 };
 
 const AuthenticationDemo = () => {
-  const { user, loading } = useSupabaseAuth();
+  const { user, isLoading: loading } = useUser();
 
   if (loading) {
     return <div className="text-center p-8">Loading authentication state...</div>;

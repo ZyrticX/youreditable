@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Database, Users, FileText, Trash2 } from 'lucide-react';
-import { useSupabaseQuery } from '@/hooks/useSupabase';
 import { SupabaseDB } from '@/api/entities';
 
 export const SupabaseDemo = () => {
@@ -204,9 +203,29 @@ export const SupabaseDemo = () => {
 };
 
 export const SupabaseRealtimeDemo = ({ tableName = 'messages' }) => {
-  const { data, loading, error } = useSupabaseQuery(tableName, (query) =>
-    query.select('*').order('created_at', { ascending: false }).limit(5)
-  );
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data: result, error } = await SupabaseDB.from(tableName)
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        if (error) throw error;
+        setData(result || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [tableName]);
 
   return (
     <Card>

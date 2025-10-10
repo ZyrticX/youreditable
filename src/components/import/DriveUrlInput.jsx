@@ -30,7 +30,7 @@ export default function DriveUrlInput({ driveUrl, setDriveUrl, onSubmit, isLoadi
         <Alert className="border-blue-200 bg-blue-50">
           <Info className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-800">
-            Make sure your Google Drive folder is publicly accessible or shared with the appropriate permissions.
+            Works with publicly shared Google Drive folders. For private folders, sign in with Google for enhanced access.
           </AlertDescription>
         </Alert>
 

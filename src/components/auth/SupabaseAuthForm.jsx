@@ -5,10 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Mail, Lock, User } from 'lucide-react';
-import { useSupabaseAuth } from '@/hooks/useSupabase';
+import { useUser } from './UserProvider';
 
 export const SupabaseAuthForm = ({ onSuccess }) => {
-  const { user, loading, error, signIn, signUp, signOut } = useSupabaseAuth();
+  const { user, isLoading: loading, signIn, signUp, signOut } = useUser();
   const [formData, setFormData] = useState({
     email: '',
     password: '',

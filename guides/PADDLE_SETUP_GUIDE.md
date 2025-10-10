@@ -1,185 +1,109 @@
-# 🚀 Paddle Payment Integration Setup Guide
+# Paddle Payment System Setup Guide
 
-## ✅ What's Already Implemented
+## Overview
+This guide explains how to set up Paddle for payment processing in your application.
 
-Your app now has a complete Paddle payment integration! Here's what's been added:
+## Current Status
+⚠️ **Paddle is currently configured with placeholder values and will not work for real payments.**
 
-### 1. **Frontend Integration** (`index.html`)
-- ✅ Paddle.js CDN loaded
-- ✅ Automatic environment detection (sandbox/production)
-- ✅ Payment functions (`guardedBuy`, `goManageBilling`)
-- ✅ Event listeners for payment completion
-- ✅ User context integration
+## Required Steps
 
-### 2. **Configuration** (`src/config/paddle.js`)
-- ✅ Environment-based configuration
-- ✅ Price ID mappings for all plans
-- ✅ Helper functions for price resolution
+### 1. Create Paddle Account
+1. Go to [Paddle.com](https://paddle.com) and create an account
+2. Complete the verification process
+3. Set up your business information
 
-### 3. **Database Schema** (`paddle-schema-update.sql`)
-- ✅ Paddle customer/subscription ID fields
-- ✅ Detailed subscriptions table
-- ✅ Proper indexes and RLS policies
+### 2. Get API Tokens
+1. In Paddle Dashboard, go to **Developer Tools** > **Authentication**
+2. Create API tokens for:
+   - **Sandbox** (for testing): `test_xxxxxxxxxxxxxxxxx`
+   - **Live** (for production): `live_xxxxxxxxxxxxxxxxx`
 
-### 4. **Webhook Handler** (`supabase/functions/paddle-webhook/index.ts`)
-- ✅ Handles subscription created/updated/canceled
-- ✅ Automatic plan level updates
-- ✅ Transaction recording
-- ✅ User plan synchronization
+### 3. Create Products and Prices
+1. Go to **Catalog** > **Products** in Paddle Dashboard
+2. Create products for your plans:
+   - **Basic Plan** (Monthly & Annual)
+   - **Pro Plan** (Monthly & Annual)
+3. Note down the **Price IDs** for each plan
 
-## 🔧 Setup Steps
+### 4. Update Configuration
 
-### Step 1: Create Paddle Account
-1. **Sign up**: Go to [Paddle.com](https://paddle.com) and create an account
-2. **Verify**: Complete identity verification (required for live payments)
-3. **Sandbox**: Start with sandbox environment for testing
-
-### Step 2: Create Products & Prices in Paddle Dashboard
-Navigate to **Catalog → Products** and create:
-
-#### Basic Plan
-- **Product Name**: "Basic Plan - Video Review App"
-- **Monthly Price**: $17/month (recurring)
-- **Annual Price**: $169/year (recurring, save $35)
-
-#### Pro Plan  
-- **Product Name**: "Pro Plan - Video Review App"
-- **Monthly Price**: $29/month (recurring)
-- **Annual Price**: $289/year (recurring, save $59)
-
-**📝 Note**: Copy the Price IDs (starting with `pri_`) for the next step.
-
-### Step 3: Update Configuration
-
-#### A. Update Paddle Tokens (`index.html`)
+#### Update `index.html`:
 ```javascript
-// Replace these tokens with your actual Paddle tokens
-token: window.location.hostname === 'localhost' 
-  ? 'test_your_sandbox_token_here'     // Your sandbox token
-  : 'live_your_production_token_here', // Your live token
-```
+const PADDLE_CONFIG = {
+  environment: window.location.hostname === 'localhost' ? 'sandbox' : 'production',
+  token: window.location.hostname === 'localhost' 
+    ? 'test_YOUR_SANDBOX_TOKEN_HERE'
+    : window.location.hostname === 'www.youreditable.com'
+      ? 'live_YOUR_LIVE_TOKEN_HERE'
+      : 'test_YOUR_SANDBOX_TOKEN_HERE',
+  
+  isConfigured: true // ← Change this to true when tokens are real
+};
 
-#### B. Update Price IDs (`index.html`)
-```javascript
 const PADDLE_PRICES = {
-  basic_monthly: 'pri_your_basic_monthly_id',
-  basic_annual: 'pri_your_basic_annual_id', 
-  pro_monthly: 'pri_your_pro_monthly_id',
-  pro_annual: 'pri_your_pro_annual_id'
+  basic_monthly: 'pri_YOUR_BASIC_MONTHLY_PRICE_ID',
+  basic_annual: 'pri_YOUR_BASIC_ANNUAL_PRICE_ID', 
+  pro_monthly: 'pri_YOUR_PRO_MONTHLY_PRICE_ID',
+  pro_annual: 'pri_YOUR_PRO_ANNUAL_PRICE_ID'
 };
 ```
 
-### Step 4: Setup Supabase Database
-1. **Run Schema Update**:
-   ```sql
-   -- In your Supabase SQL Editor, run:
-   -- Copy and paste contents of paddle-schema-update.sql
-   ```
-
-2. **Deploy Webhook Function**:
-   ```bash
-   # Install Supabase CLI if not already installed
-   npm install -g supabase
-   
-   # Login to Supabase
-   supabase login
-   
-   # Deploy the webhook function
-   supabase functions deploy paddle-webhook
-   ```
-
-### Step 5: Configure Paddle Webhooks
-1. **Go to**: Paddle Dashboard → Developer Tools → Notifications
-2. **Add Endpoint**: `https://your-project.supabase.co/functions/v1/paddle-webhook`
-3. **Subscribe to Events**:
+### 5. Set Up Webhooks
+1. In Paddle Dashboard, go to **Developer Tools** > **Notifications**
+2. Add webhook endpoint: `https://your-project.supabase.co/functions/v1/paddle-webhook`
+3. Select events to listen for:
    - `subscription.created`
-   - `subscription.updated` 
+   - `subscription.updated`
    - `subscription.canceled`
    - `transaction.completed`
 
-### Step 6: Update Price IDs in Webhook
-Edit `supabase/functions/paddle-webhook/index.ts`:
-```typescript
-const priceIdToPlan: { [key: string]: string } = {
-  'pri_your_basic_monthly_id': 'basic',
-  'pri_your_basic_annual_id': 'basic',
-  'pri_your_pro_monthly_id': 'pro', 
-  'pri_your_pro_annual_id': 'pro'
-}
+### 6. Configure Supabase Edge Function
+The webhook handler is already created at `supabase/functions/paddle-webhook/index.ts`
+
+Deploy it with:
+```bash
+supabase functions deploy paddle-webhook
 ```
 
-## 🧪 Testing Your Integration
+### 7. Environment Variables
+Add to your Supabase project:
+- `PADDLE_WEBHOOK_SECRET` - From Paddle webhook settings
 
-### 1. **Test in Sandbox Mode**
-- Use sandbox tokens and price IDs
-- Test payments with Paddle's test cards
-- Verify webhook events in Supabase logs
+### 8. Testing
 
-### 2. **Test Payment Flow**
-1. Go to `/Pricing` or `/Upgrade`
-2. Click upgrade on any plan
-3. Paddle checkout should open
-4. Complete test payment
-5. Check Supabase to see plan updated
+#### Sandbox Testing:
+1. Use test card numbers from Paddle documentation
+2. Test different scenarios (success, failure, cancellation)
 
-### 3. **Test Webhooks**
-- Monitor Supabase Function logs
-- Check `profiles` table for plan updates
-- Verify `transactions` table entries
+#### Production Testing:
+1. Start with small amounts
+2. Test the complete flow
+3. Verify webhooks are received
 
-## 🔄 How It Works
+## Current Error Resolution
 
-### Payment Flow
-1. **User clicks upgrade** → `guardedBuy()` function called
-2. **Paddle checkout opens** → User completes payment
-3. **Payment succeeds** → Paddle sends webhook to Supabase
-4. **Webhook processes** → Updates user's plan in database
-5. **User sees changes** → Plan limits and UI update
+The `400 Bad Request` error you're seeing is because:
+1. **Invalid Paddle tokens** - Using placeholder values
+2. **Invalid Price IDs** - Using example IDs that don't exist
+3. **Missing webhook configuration**
 
-### Plan Enforcement
-- **Project limits** enforced in Dashboard/Projects/Import pages
-- **Real-time updates** when plan changes
-- **Automatic downgrades** when subscription canceled
+## Quick Fix for Development
 
-## 🚀 Going Live
+To test the UI without real payments, you can:
+1. Keep `isConfigured: false` in `PADDLE_CONFIG`
+2. The app will show a setup message instead of trying to process payments
+3. This prevents the 400 errors while you set up real Paddle integration
 
-### 1. **Switch to Production**
-- Update tokens to live environment
-- Update price IDs to production prices
-- Test with small amounts first
+## Security Notes
 
-### 2. **Security Checklist**
-- ✅ Enable webhook signature verification
-- ✅ Use HTTPS for all endpoints
-- ✅ Validate all webhook data
-- ✅ Monitor for failed payments
+- **Never commit real API tokens to Git**
+- Use environment variables for sensitive data
+- Test thoroughly in sandbox before going live
+- Monitor webhook delivery in Paddle Dashboard
 
-### 3. **Monitoring**
-- Monitor Supabase function logs
-- Set up alerts for failed webhooks
-- Track subscription metrics in Paddle dashboard
+## Support
 
-## 🎯 Current Status
-
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Frontend Integration | ✅ Complete | Ready for testing |
-| Database Schema | ✅ Complete | Run SQL update |
-| Webhook Handler | ✅ Complete | Deploy to Supabase |
-| Paddle Configuration | ⏳ Needs Setup | Add your tokens/prices |
-| Testing | ⏳ Ready | Update config first |
-| Production | ⏳ Ready | After testing |
-
-## 🆘 Troubleshooting
-
-### Common Issues
-1. **"Price ID not found"** → Update PADDLE_PRICES with your actual price IDs
-2. **"Paddle not initialized"** → Check your tokens are correct
-3. **"Webhook not firing"** → Verify webhook URL in Paddle dashboard
-4. **"User plan not updating"** → Check Supabase function logs
-
-### Support
-- **Paddle Docs**: [developer.paddle.com](https://developer.paddle.com)
-- **Supabase Docs**: [supabase.com/docs](https://supabase.com/docs)
-
-Your Paddle integration is ready! 🎉 Just add your tokens and price IDs to start accepting payments.
+- [Paddle Documentation](https://developer.paddle.com/)
+- [Paddle Support](https://paddle.com/support/)
+- [Supabase Edge Functions](https://supabase.com/docs/guides/functions)

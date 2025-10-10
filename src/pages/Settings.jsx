@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { useUser } from '../components/auth/UserProvider';
 
 
 const PLAN_FEATURES = {
@@ -84,6 +85,7 @@ const PLAN_FEATURES = {
 };
 
 export default function SettingsPage() {
+  const { user: authUser, signOut, isLoading: authLoading, isAuthenticated } = useUser();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -103,21 +105,65 @@ export default function SettingsPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadUserData();
-  }, []);
+    if (!authLoading) {
+      loadUserData();
+    }
+  }, [authLoading, authUser]);
 
   const loadUserData = async () => {
     setIsLoading(true);
     try {
-      const currentUser = await User.me();
-      setUser(currentUser);
-      setFormData({
-        full_name: currentUser.display_name || currentUser.full_name || '',
-        email: currentUser.email || ''
-      });
+      if (!authUser) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
 
-      if (!currentUser.display_user_id || currentUser.display_user_id !== currentUser.id) {
-        await User.updateMyUserData({ display_user_id: currentUser.id });
+      // Try to get user profile from database
+      try {
+        const profiles = await User.filter({ id: authUser.id });
+        const currentUser = profiles.length > 0 ? profiles[0] : null;
+        
+        if (currentUser) {
+          setUser(currentUser);
+          setFormData({
+            full_name: currentUser.display_name || currentUser.full_name || authUser.user_metadata?.full_name || '',
+            email: currentUser.email || authUser.email || ''
+          });
+
+          if (!currentUser.display_user_id || currentUser.display_user_id !== currentUser.id) {
+            await User.updateMyUserData({ display_user_id: currentUser.id });
+          }
+        } else {
+          // Create basic user object from auth data
+          const basicUser = {
+            id: authUser.id,
+            email: authUser.email,
+            display_name: authUser.user_metadata?.full_name || '',
+            full_name: authUser.user_metadata?.full_name || '',
+            plan_level: 'free'
+          };
+          setUser(basicUser);
+          setFormData({
+            full_name: basicUser.display_name || basicUser.full_name || '',
+            email: basicUser.email || ''
+          });
+        }
+      } catch (dbError) {
+        console.log('Could not load user profile from database, using auth data:', dbError);
+        // Fallback to auth user data
+        const basicUser = {
+          id: authUser.id,
+          email: authUser.email,
+          display_name: authUser.user_metadata?.full_name || '',
+          full_name: authUser.user_metadata?.full_name || '',
+          plan_level: 'free'
+        };
+        setUser(basicUser);
+        setFormData({
+          full_name: basicUser.display_name || basicUser.full_name || '',
+          email: basicUser.email || ''
+        });
       }
     } catch (error) {
       console.error('Failed to load user data:', error);
@@ -161,18 +207,13 @@ export default function SettingsPage() {
 
       const updateData = {
         display_name: formData.full_name.trim(),
-        display_user_id: user.id
+        display_user_id: displayUser.id
       };
 
       await User.updateMyUserData(updateData);
 
       // Reload user data to reflect changes
-      const updatedUser = await User.me();
-      setUser(updatedUser);
-      setFormData({
-        full_name: updatedUser.display_name || updatedUser.full_name || '',
-        email: updatedUser.email || ''
-      });
+      await loadUserData();
 
       toast.success('Profile updated successfully!');
     } catch (error) {
@@ -211,36 +252,63 @@ export default function SettingsPage() {
 
   const handleLogout = async () => {
     try {
-      await User.logout();
-      window.location.reload();
+      await signOut();
+      // Redirect to home page
+      window.location.href = '/Home';
     } catch (error) {
       console.error('Logout failed:', error);
       toast.error('Logout failed');
+      // Even if logout fails, redirect to home
+      window.location.href = '/Home';
     }
   };
 
-  const currentPlan = user?.plan_level || 'free';
-  const planInfo = PLAN_FEATURES[currentPlan];
-  const isFreePlan = currentPlan === 'free';
-  const isProPlan = currentPlan === 'pro';
+  // Move this after displayUser definition
+  // Will be updated below
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-[rgb(var(--surface-dark))] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-[rgb(var(--accent-primary))] animate-spin" />
       </div>);
   }
 
-  if (!user) {
+  // Debug authentication state
+  console.log('Settings page auth state:', { 
+    isAuthenticated, 
+    hasAuthUser: !!authUser, 
+    authUserEmail: authUser?.email,
+    authLoading 
+  });
+
+  if (!isAuthenticated || !authUser) {
+    console.log('Settings: User not authenticated, showing login prompt');
     return (
       <div className="min-h-screen bg-[rgb(var(--surface-dark))] flex items-center justify-center">
         <Card className="max-w-md w-full bg-[rgb(var(--surface-light))] border-[rgb(var(--border-dark))]">
           <CardContent className="text-center py-8">
-            <p className="text-white">Please log in to access settings</p>
+            <p className="text-white mb-4">Please log in to access settings</p>
+            <Button onClick={() => navigate('/Login')} className="bg-[rgb(var(--accent-primary))] hover:bg-violet-600">
+              Go to Login
+            </Button>
           </CardContent>
         </Card>
       </div>);
   }
+
+  // If we have authUser but no user profile, show basic interface
+  const displayUser = user || {
+    id: authUser.id,
+    email: authUser.email,
+    display_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || '',
+    full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || '',
+    plan_level: 'free'
+  };
+
+  const currentPlan = displayUser?.plan_level || 'free';
+  const planInfo = PLAN_FEATURES[currentPlan];
+  const isFreePlan = currentPlan === 'free';
+  const isProPlan = currentPlan === 'pro';
 
   return (
     <div className="min-h-screen bg-[rgb(var(--surface-dark))] p-4 sm:p-6 lg:p-8">
@@ -269,9 +337,9 @@ export default function SettingsPage() {
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative">
                   <Avatar className="w-24 h-24">
-                    <AvatarImage src={user?.profile_picture_url} />
+                    <AvatarImage src={displayUser?.profile_picture_url} />
                     <AvatarFallback className="2xl">
-                      {(user?.display_name || user?.full_name)?.charAt(0) || user?.email?.charAt(0)}
+                      {(displayUser?.display_name || displayUser?.full_name)?.charAt(0) || displayUser?.email?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <label
@@ -316,7 +384,7 @@ export default function SettingsPage() {
 
               <Button
                 onClick={handleSaveProfile}
-                disabled={isSaving || formData.full_name === (user?.display_name || user?.full_name || '')}
+                disabled={isSaving || formData.full_name === (displayUser?.display_name || displayUser?.full_name || '')}
                 className="bg-[rgb(var(--accent-primary))] hover:bg-violet-600 text-white accent-glow">
                 {isSaving ?
                   <>
@@ -357,9 +425,9 @@ export default function SettingsPage() {
                       <h3 className="text-xl font-bold text-white">
                         You're on the {planInfo.name}
                       </h3>
-                      {user.next_billing_date && !isFreePlan &&
+                      {displayUser.next_billing_date && !isFreePlan &&
                         <p className="text-sm text-[rgb(var(--text-secondary))] mt-1">
-                          Your plan renews on {format(new Date(user.next_billing_date), 'MMMM dd, yyyy')}
+                          Your plan renews on {format(new Date(displayUser.next_billing_date), 'MMMM dd, yyyy')}
                         </p>
                       }
                       {isFreePlan &&
