@@ -26,21 +26,6 @@ import { migrateVideoUrls } from "../utils/urlMigration";
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const retryApiCall = async (apiCall, maxRetries = 3, baseDelay = 1000) => {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await apiCall();
-    } catch (error) {
-      if (error.response?.status === 429 && attempt < maxRetries) {
-        const delayMs = baseDelay * Math.pow(2, attempt - 1);
-        await delay(delayMs);
-        continue;
-      }
-      throw error;
-    }
-  }
-};
-
 export default function Review() {
   const location = useLocation();
   const urlParams = new URLSearchParams(location.search);
