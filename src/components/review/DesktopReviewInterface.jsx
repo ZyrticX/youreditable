@@ -285,9 +285,9 @@ export default function DesktopReviewInterface({
                                       {note.reviewer_label || 'Anonymous'}
                                     </span>
                                   </div>
-                                  {note.timecode_ms && (
+                                  {note.formattedTimecode && (
                                     <div className="text-xs text-violet-400">
-                                      @ {Math.floor(note.timecode_ms / 1000)}s
+                                      @ {note.formattedTimecode}
                                     </div>
                                   )}
                                 </div>
@@ -296,7 +296,7 @@ export default function DesktopReviewInterface({
                                 </p>
                                 <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
                                   <Clock className="w-3 h-3" />
-                                  {note.created_at ? format(new Date(note.created_at), 'MMM d, h:mm a') : 'Unknown time'}
+                                  {note.formattedDate || (note.created_at ? format(new Date(note.created_at), 'MMM d, h:mm a') : 'Unknown time')}
                                 </div>
                               </div>
                             ))}
@@ -364,22 +364,61 @@ export default function DesktopReviewInterface({
                   className="flex-1 flex flex-col p-6"
                 >
                   <div className="text-center py-8">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-emerald-500/10 rounded-full flex items-center justify-center">
-                      <ThumbsUp className="w-8 h-8 text-emerald-400" />
-                    </div>
-                    <h4 className="text-lg font-semibold text-white mb-2">
-                      Approve This Video
-                    </h4>
-                    <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-                      Ready to approve "{currentVideo?.title}"? This will mark the video as finalized and notify the team.
-                    </p>
-                    <Button
-                      onClick={() => setShowSubmitForm(true)}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-8"
-                    >
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Approve Video
-                    </Button>
+                    {currentVideo?.status === 'approved' ? (
+                      <>
+                        <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
+                        <h4 className="text-lg font-semibold text-emerald-400 mb-2">
+                          Video Approved
+                        </h4>
+                        <div className="text-slate-400 text-sm mb-6 leading-relaxed space-y-2">
+                          <p>This video has been approved and finalized.</p>
+                          {currentVideo.approved_by && (
+                            <p>
+                              Approved by: <span className="text-emerald-400">{currentVideo.approved_by}</span>
+                            </p>
+                          )}
+                          {currentVideo.approved_at && (
+                            <p>
+                              On: <span className="text-emerald-400">
+                                {new Date(currentVideo.approved_at).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          disabled
+                          className="bg-emerald-600/50 text-white px-8 cursor-not-allowed"
+                        >
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          Already Approved
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 mx-auto mb-4 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                          <ThumbsUp className="w-8 h-8 text-emerald-400" />
+                        </div>
+                        <h4 className="text-lg font-semibold text-white mb-2">
+                          Approve This Video
+                        </h4>
+                        <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                          Ready to approve "{currentVideo?.title}"? This will mark the video as finalized and notify the team.
+                        </p>
+                        <Button
+                          onClick={() => setShowSubmitForm(true)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-8"
+                        >
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          Approve Video
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </motion.div>
               )}

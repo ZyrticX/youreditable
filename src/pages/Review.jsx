@@ -143,19 +143,37 @@ export default function Review() {
         versionIds.includes(note.video_version_id)
       );
       
-      // Add video title to each note for display
+      // Add video title and format display info for each note
       const notesWithVideoInfo = projectNotes.map(note => {
         const video = videoList.find(v => 
           v.currentVersion && v.currentVersion.id === note.video_version_id
         );
+        
+        // Format timecode for display
+        const formatTimecode = (ms) => {
+          if (!ms) return '00:00';
+          const seconds = Math.floor(ms / 1000);
+          const minutes = Math.floor(seconds / 60);
+          const remainingSeconds = seconds % 60;
+          return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        };
+        
         return {
           ...note,
-          videoTitle: video ? video.title : 'Unknown Video'
+          videoTitle: video ? video.title : 'Unknown Video',
+          formattedTimecode: formatTimecode(note.timecode_ms),
+          formattedDate: new Date(note.created_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
         };
       });
       
       setExistingNotes(notesWithVideoInfo);
-      console.log(`Loaded ${notesWithVideoInfo.length} existing notes`);
+      console.log(`📝 Loaded ${notesWithVideoInfo.length} existing notes for project`);
       
     } catch (error) {
       console.error("Error loading existing notes:", error);
@@ -276,6 +294,23 @@ export default function Review() {
   const handleApproveVideo = async (reviewerName) => {
     const currentVideo = videos[currentVideoIndex];
     if (!currentVideo || !currentVideo.currentVersion || !project) return;
+    
+    // Check if video is already approved
+    if (currentVideo.status === 'approved') {
+      const approvalInfo = currentVideo.approved_by && currentVideo.approved_at 
+        ? `Already approved by ${currentVideo.approved_by} on ${new Date(currentVideo.approved_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}`
+        : 'This video has already been approved';
+      
+      toast.info(approvalInfo);
+      return;
+    }
+
     toast.info("Approving video...");
 
     try {
@@ -293,13 +328,16 @@ export default function Review() {
 
       console.log('✅ Approval created successfully');
 
+      const approvalTime = new Date().toISOString();
+      const approver = reviewerName || "Anonymous";
+
       // Update video status - use direct Supabase call to avoid RLS issues
       const { data: updatedVideo, error: updateError } = await supabaseClient.supabase
         .from('videos')
         .update({ 
           status: "approved",
-          approved_at: new Date().toISOString(),
-          approved_by: reviewerName || "Anonymous"
+          approved_at: approvalTime,
+          approved_by: approver
         })
         .eq('id', currentVideo.id)
         .select()
@@ -312,7 +350,16 @@ export default function Review() {
 
       console.log('✅ Video status updated:', updatedVideo);
       
-      const updatedVideos = videos.map(v => v.id === currentVideo.id ? {...v, status: 'approved'} : v);
+      const updatedVideos = videos.map(v => 
+        v.id === currentVideo.id 
+          ? {
+              ...v, 
+              status: 'approved',
+              approved_at: approvalTime,
+              approved_by: approver
+            } 
+          : v
+      );
       setVideos(updatedVideos);
       
       const approvedCount = updatedVideos.filter(v => v.status === 'approved').length;
@@ -443,11 +490,14 @@ export default function Review() {
                         </span>
                       </div>
                       <p className="text-sm text-white">{note.body || note.note_text}</p>
-                      {note.timecode_ms && (
-                        <div className="text-xs text-[rgb(var(--accent-primary))] mt-1">
-                          @ {Math.floor(note.timecode_ms / 1000)}s
-                        </div>
-                      )}
+                      <div className="flex items-center justify-between mt-2 text-xs text-[rgb(var(--text-secondary))]">
+                        {note.formattedTimecode && (
+                          <span className="text-[rgb(var(--accent-primary))]">
+                            @ {note.formattedTimecode}
+                          </span>
+                        )}
+                        <span>{note.formattedDate}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
