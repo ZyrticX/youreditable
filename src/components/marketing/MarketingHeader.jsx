@@ -15,7 +15,7 @@ export default function MarketingHeader() {
 
     const handleCTA = (path) => {
         if (path === '/login') {
-            window.location.href = 'https://youreditable.com/Dashboard';
+            navigate('/Login');
         } else {
             navigate(path);
         }

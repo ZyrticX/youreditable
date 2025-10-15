@@ -89,9 +89,17 @@ export default function Login() {
           setGeneralError(error.message || 'An error occurred during sign in');
         }
       } else if (data?.user) {
-        // Success - immediate redirect
+        // Success - immediate redirect with multiple methods
         console.log('✅ Sign in successful, redirecting to Dashboard');
+        
+        // Method 1: React Router navigate
         navigate('/Dashboard');
+        
+        // Method 2: Force redirect (backup)
+        setTimeout(() => {
+          console.log('🔄 Backup redirect to Dashboard from Login');
+          window.location.replace('/Dashboard');
+        }, 100);
       }
     } catch (error) {
       console.error('Sign in error:', error);

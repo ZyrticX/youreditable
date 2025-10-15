@@ -180,11 +180,17 @@ const BillingToggle = ({ isAnnual, onToggle }) => {
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useUser();
+  const { isAuthenticated, user, isLoading } = useUser();
   const [isAnnual, setIsAnnual] = useState(false);
   const [openItems, setOpenItems] = useState(new Set());
 
-  // No automatic redirect - let users stay on home page even if logged in
+  // Redirect authenticated users to Dashboard
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      console.log('🏠 User is authenticated on Home page, redirecting to Dashboard');
+      navigate('/Dashboard');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   const handleCTA = (path) => {
     if (path === '/dashboard') {

@@ -56,11 +56,24 @@ export const UserProvider = ({ children }) => {
                     
                     // Force redirect to Dashboard after successful login
                     const currentPath = window.location.pathname;
-                    if (currentPath === '/Login' || currentPath === '/Register') {
-                        console.log('🚀 Redirecting to Dashboard after login');
+                    console.log('📍 Current path after login:', currentPath);
+                    
+                    // Redirect from auth pages or home page to Dashboard
+                    if (currentPath === '/Login' || currentPath === '/Register' || currentPath === '/Home' || currentPath === '/') {
+                        console.log('🚀 Redirecting to Dashboard after login from:', currentPath);
+                        // Use multiple methods to ensure redirect works
                         setTimeout(() => {
-                            window.location.href = '/Dashboard';
-                        }, 100);
+                            console.log('🔄 Executing redirect to Dashboard');
+                            window.location.replace('/Dashboard');
+                        }, 50);
+                        
+                        // Backup redirect method
+                        setTimeout(() => {
+                            if (window.location.pathname !== '/Dashboard') {
+                                console.log('🔄 Backup redirect to Dashboard');
+                                window.location.href = '/Dashboard';
+                            }
+                        }, 200);
                     }
                 } else if (event === 'SIGNED_OUT') {
                     console.log('👋 User signed out');

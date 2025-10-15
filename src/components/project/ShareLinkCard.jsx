@@ -142,12 +142,12 @@ export default function ShareLinkCard({ project, onExtendLink, onGenerateNewLink
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col gap-3">
                     <Button
                         onClick={handleExtendLink}
                         disabled={isExtending}
                         variant="outline"
-                        className="flex-1 bg-[rgb(var(--surface-dark))] hover:bg-[rgb(var(--surface-light))] border-[rgb(var(--border-dark))] text-white"
+                        className="w-full bg-[rgb(var(--surface-dark))] hover:bg-[rgb(var(--surface-light))] border-[rgb(var(--border-dark))] text-white"
                     >
                         {isExtending ? (
                             <>
@@ -166,7 +166,7 @@ export default function ShareLinkCard({ project, onExtendLink, onGenerateNewLink
                         onClick={handleGenerateNewLink}
                         disabled={isGenerating}
                         variant="outline"
-                        className="flex-1 bg-[rgb(var(--surface-dark))] hover:bg-[rgb(var(--surface-light))] border-[rgb(var(--border-dark))] text-white"
+                        className="w-full bg-[rgb(var(--surface-dark))] hover:bg-[rgb(var(--surface-light))] border-[rgb(var(--border-dark))] text-white"
                     >
                         {isGenerating ? (
                             <>
